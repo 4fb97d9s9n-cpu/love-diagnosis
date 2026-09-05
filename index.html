@@ -1,0 +1,200 @@
+import { useState } from "react";
+
+const BASE60 = ['555','012','100','100','012','555','888','789','919','125','012','555','888','789','919','125','108','024','001','025','919','125','108','024','001','025','000','000','025','001','001','025','000','000','025','001','024','108','125','919','025','001','024','108','125','919','789','888','555','012','125','919','789','888','555','012','100','100','012','555'];
+
+const MD = [0,31,28,31,30,31,30,31,31,30,31,30,31];
+function isLeap(y){ return (y%4===0&&y%100!==0)||y%400===0; }
+function getPos(y,m,d){
+  let cum=0;
+  for(let yr=1920;yr<y;yr++) cum+=isLeap(yr)?366:365;
+  const feb=isLeap(y)?29:28;
+  for(let mo=1;mo<m;mo++) cum+=(mo===2?feb:MD[mo]);
+  cum+=d-1;
+  return cum%60;
+}
+
+const T={
+  '012':{cat:'人柄重視',color:'blue',label:'青年タイプ',item:'同年代より若くありたい気持ちが強い'},
+  '025':{cat:'人柄重視',color:'blue',label:'Give and Takeタイプ',item:'仲間意識・助け合い精神が旺盛'},
+  '108':{cat:'人柄重視',color:'blue',label:'赤ちゃんタイプ',item:'周りから愛され可愛がられたい気持ちが強い'},
+  '789':{cat:'人柄重視',color:'blue',label:'会長タイプ',item:'自分の存在感を明確にしておきたい気持ちが強い'},
+  '919':{cat:'結果重視',color:'green',label:'子供タイプ',item:'サービス精神旺盛で人の役に立ちたい気持ちが強い'},
+  '125':{cat:'結果重視',color:'green',label:'老人タイプ',item:'常に夢を創造し自分で夢の実現をしたい気持ちが強い'},
+  '001':{cat:'結果重視',color:'green',label:'胎児タイプ',item:'人のまねをせずオンリーワンの自分になりたい気持ちが強い'},
+  '555':{cat:'結果重視',color:'green',label:'Balanceタイプ',item:'何でもバランスよくできるマルチプレーヤーになりたい'},
+  '888':{cat:'直感重視',color:'pink',label:'少年少女タイプ',item:'好奇心とチャレンジ精神が旺盛で少年少女のような気持ちが強い'},
+  '024':{cat:'直感重視',color:'pink',label:'プロ・職人タイプ',item:'プロ意識が強く任せて欲しい気持ちが強い'},
+  '000':{cat:'直感重視',color:'pink',label:'魂タイプ',item:'直感が鋭くピンときたら即行動したい気持ちが強い'},
+  '100':{cat:'直感重視',color:'pink',label:'部長タイプ',item:'豪華絢爛で立派な世界に似合う自分をつくりたい気持ちが強い'},
+};
+
+const LOVE={
+  '108':{M:'男の子',F:'乙女心'},'789':{M:'男の子',F:'乙女心'},
+  '888':{M:'少年',F:'女子力'},'024':{M:'少年',F:'女子力'},
+  '919':{M:'コンペティション',F:'女力'},'125':{M:'コンペティション',F:'女力'},
+  '001':{M:'マイワールド',F:'妻力（家庭経営）'},'555':{M:'マイワールド',F:'妻力（家庭経営）'},
+  '000':{M:'ブランド',F:'女王'},'100':{M:'ブランド',F:'女王'},
+  '012':{M:'青年',F:'聖母'},'025':{M:'青年',F:'聖母'},
+};
+
+const LOVE_DESC={
+  '108':'約束を守ること、優しくあることを大切にするタイプです。「この人を守りたい」「この人なら私を守ってくれる」そんな安心できる関係の中で、いちばん大きなチカラを発揮します。信頼できる相手のためなら、思っている以上に頑張れる人です。',
+  '789':'約束を守ること、優しくあることを大切にするタイプです。「この人を守りたい」「この人なら私を守ってくれる」そんな安心できる関係の中で、いちばん大きなチカラを発揮します。信頼できる相手のためなら、思っている以上に頑張れる人です。',
+  '888':'「可愛い」「カッコいい」「素敵」と感じられることを大切にするタイプです。誰かから「すごい」と思われることも、自分自身で「私、けっこうすごいかも」と思えることも大きなエネルギーになります。魅力的でありたい、認められたいという気持ちが、自分を前へ進ませてくれます。',
+  '024':'「可愛い」「カッコいい」「素敵」と感じられることを大切にするタイプです。誰かから「すごい」と思われることも、自分自身で「私、けっこうすごいかも」と思えることも大きなエネルギーになります。魅力的でありたい、認められたいという気持ちが、自分を前へ進ませてくれます。',
+  '919':'「勝ちたい」「負けたくない」という気持ちを強く持ちやすいタイプです。誰かに任せきるより、「自分がしっかりしていたい」と考える傾向があります。自分で決め、自分で立ち、自分の力で乗り越えられることに大きな価値を感じます。',
+  '125':'「勝ちたい」「負けたくない」という気持ちを強く持ちやすいタイプです。誰かに任せきるより、「自分がしっかりしていたい」と考える傾向があります。自分で決め、自分で立ち、自分の力で乗り越えられることに大きな価値を感じます。',
+  '001':'「自分の世界」をとても大切にするタイプです。「私」と「あなた」をきちんと分け、それぞれの価値観や領域を尊重します。だからこそ、近い関係であっても、何でも一緒である必要はありません。自分らしくいられることも、相手がその人らしくいられることも大切にします。その一方で、家族としてのつながりや安心感はしっかり求めています。「別々の人間でありながら、ちゃんとつながっている」そんな関係を心地よく感じるタイプです。',
+  '555':'「自分の世界」をとても大切にするタイプです。「私」と「あなた」をきちんと分け、それぞれの価値観や領域を尊重します。だからこそ、近い関係であっても、何でも一緒である必要はありません。自分らしくいられることも、相手がその人らしくいられることも大切にします。その一方で、家族としてのつながりや安心感はしっかり求めています。「別々の人間でありながら、ちゃんとつながっている」そんな関係を心地よく感じるタイプです。',
+  '000':'自分だけの世界に深く入り込めることを、とても大切にするタイプです。一方で、社会とのつながりや人との関係も決して軽くは考えていません。一人の世界と、外の世界。その両方を持っているところが、このタイプの魅力です。ただし、誰にでも簡単に本心を見せるわけではありません。',
+  '100':'自分だけの世界に深く入り込めることを、とても大切にするタイプです。一方で、社会とのつながりや人との関係も決して軽くは考えていません。一人の世界と、外の世界。その両方を持っているところが、このタイプの魅力です。ただし、誰にでも簡単に本心を見せるわけではありません。',
+  '012':'「みんなが大切」という気持ちが、とても強いタイプです。周りの人が気持ちよくいられることを優先するあまり、自分のことを後回しにしてしまうこともあります。本当は言いたいことがあっても、空気を壊したくなくて飲み込んでしまう。そんな優しさを持っている人です。',
+  '025':'「みんなが大切」という気持ちが、とても強いタイプです。周りの人が気持ちよくいられることを優先するあまり、自分のことを後回しにしてしまうこともあります。本当は言いたいことがあっても、空気を壊したくなくて飲み込んでしまう。そんな優しさを持っている人です。',
+};
+
+const colorMap = {
+  blue:  { num:'#7ba7bc', bg:'#e8f4f9', border:'#b8d8e8' },
+  green: { num:'#8aac6e', bg:'#e8f4ec', border:'#b8d8b0' },
+  pink:  { num:'#c98b8b', bg:'#faeaeb', border:'#e8c0c0' },
+};
+
+export default function App() {
+  const [date, setDate] = useState('');
+  const [gender, setGender] = useState(null);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+
+  function diagnose() {
+    if (!date) { setError('生年月日を入力してください'); return; }
+    if (!gender) { setError('ボディタイプを選択してください'); return; }
+    const [y,m,d] = date.split('-').map(Number);
+    if (y < 1920 || y > 2300) { setError('1920〜2300年に対応しています'); return; }
+    setError('');
+    const pos = getPos(y,m,d);
+    const code = BASE60[pos];
+    setResult({ code, gender });
+  }
+
+  const res = result ? (() => {
+    const { code, gender: g } = result;
+    const t = T[code];
+    const c = colorMap[t.color];
+    const loveType = LOVE[code]?.[g] || '';
+    const loveDesc = LOVE_DESC[code] || '';
+    const gLabel = g === 'M' ? 'Male' : 'Female';
+    return { code, t, c, loveType, loveDesc, gLabel };
+  })() : null;
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#f5f0e8', display:'flex', flexDirection:'column', alignItems:'center', padding:'40px 16px', fontFamily:"'Noto Serif JP', serif" }}>
+
+      {/* ヘッダー */}
+      <div style={{ textAlign:'center', marginBottom:40 }}>
+        <h1 style={{ fontSize:'clamp(1.3rem,4vw,2.2rem)', fontWeight:700, color:'#4a3f6b', letterSpacing:'0.1em', lineHeight:1.4 }}>
+          恋愛素質 6TYPE診断
+        </h1>
+        <div style={{ width:60, height:1, background:'linear-gradient(90deg,transparent,#b8963e,transparent)', margin:'12px auto' }} />
+        <p style={{ fontSize:'0.82rem', color:'#888', letterSpacing:'0.1em' }}>誕生日から見る、あなたの恋愛価値観</p>
+      </div>
+
+      {/* カード */}
+      <div style={{ background:'rgba(255,255,255,0.75)', border:'1px solid rgba(74,63,107,0.15)', borderRadius:4, padding:'32px 28px', width:'100%', maxWidth:480, boxShadow:'0 4px 32px rgba(26,26,46,0.08)' }}>
+
+        {/* 生年月日 */}
+        <div style={{ marginBottom:24 }}>
+          <label style={{ fontSize:'0.72rem', letterSpacing:'0.2em', color:'#4a3f6b', display:'block', marginBottom:8 }}>生年月日</label>
+          <input
+            type="date" value={date} min="1920-01-01" max="2300-12-31"
+            onChange={e => setDate(e.target.value)}
+            style={{ width:'100%', padding:'13px 14px', fontSize:'1rem', border:'1px solid rgba(74,63,107,0.25)', borderRadius:2, background:'rgba(255,255,255,0.9)', color:'#1a1a2e', outline:'none', fontFamily:'inherit', boxSizing:'border-box' }}
+          />
+          <p style={{ fontSize:'0.7rem', color:'#999', marginTop:5 }}>※ 23時以降生まれの方は翌日の数字になります</p>
+        </div>
+
+        {/* ボディタイプ */}
+        <div style={{ marginBottom:28 }}>
+          <label style={{ fontSize:'0.72rem', letterSpacing:'0.2em', color:'#4a3f6b', display:'block', marginBottom:8 }}>ボディタイプ</label>
+          <div style={{ display:'flex', gap:10 }}>
+            {[['M','Male'],['F','Female']].map(([g, label]) => (
+              <button key={g} onClick={() => setGender(g)} style={{
+                flex:1, padding:'11px', border: gender===g ? 'none' : '1px solid rgba(74,63,107,0.25)',
+                borderRadius:2, cursor:'pointer', fontFamily:'inherit', fontSize:'0.85rem', letterSpacing:'0.15em',
+                background: gender===g ? (g==='M' ? '#7ba7bc' : '#c98b8b') : 'rgba(255,255,255,0.9)',
+                color: gender===g ? '#fff' : '#888', transition:'all .2s'
+              }}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* ボタン */}
+        <button onClick={diagnose} style={{
+          width:'100%', padding:15, background:'#4a3f6b', color:'#fff', border:'none',
+          borderRadius:2, fontFamily:'inherit', fontSize:'0.88rem', letterSpacing:'0.25em',
+          cursor:'pointer'
+        }}>素 質 を 診 断 す る</button>
+
+        {error && <p style={{ textAlign:'center', color:'#c98b8b', fontSize:'0.8rem', marginTop:10 }}>{error}</p>}
+
+        {/* 結果 */}
+        {res && (
+          <div style={{ marginTop:28 }}>
+            <div style={{ width:60, height:1, background:'linear-gradient(90deg,transparent,#b8963e,transparent)', margin:'0 auto 20px' }} />
+
+            <p style={{ textAlign:'center', fontSize:'0.68rem', letterSpacing:'0.2em', color:'#999', marginBottom:4 }}>
+              あなたの恋愛素質タイプ（{res.gLabel}）
+            </p>
+            <div style={{ textAlign:'center', fontFamily:"'Shippori Mincho', serif", fontSize:'clamp(2.8rem,11vw,4.5rem)', fontWeight:700, color:res.c.num, letterSpacing:'0.12em', lineHeight:1 }}>
+              {res.code}
+            </div>
+            <div style={{ textAlign:'center', fontSize:'0.78rem', letterSpacing:'0.2em', color:res.c.num, marginTop:4, marginBottom:14 }}>
+              {res.t.cat} ― {res.t.label}
+            </div>
+
+            {/* 恋愛強者論タイプ */}
+            {res.loveType && (
+              <div style={{ textAlign:'center', background:'rgba(184,150,62,0.1)', border:'1px solid rgba(184,150,62,0.25)', borderRadius:2, padding:'10px 16px', marginBottom:16 }}>
+                <div style={{ fontSize:'0.65rem', letterSpacing:'0.2em', color:'#b8963e', marginBottom:4 }}>恋愛強者論タイプ</div>
+                <div style={{ fontFamily:"'Shippori Mincho', serif", fontSize:'1.25rem', fontWeight:700, color:'#7a5a1a', letterSpacing:'0.12em' }}>{res.loveType}</div>
+              </div>
+            )}
+
+            {/* 目的素質の特徴 */}
+            <div style={{ borderTop:'1px solid rgba(74,63,107,0.12)', paddingTop:14, marginBottom:14 }}>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:'0.8rem', lineHeight:1.7, color:'#444' }}>
+                <span style={{ color:'#b8963e', fontSize:'1.1rem', lineHeight:1.3, flexShrink:0 }}>·</span>
+                {res.t.item}
+              </div>
+            </div>
+
+            {/* 恋愛強者論の特徴 */}
+            {res.loveDesc && (
+              <div style={{ borderTop:'1px solid rgba(184,150,62,0.2)', paddingTop:14, marginBottom:14 }}>
+                <div style={{ fontSize:'0.65rem', letterSpacing:'0.2em', color:'#b8963e', marginBottom:8 }}>恋愛強者論の特徴</div>
+                <div style={{ fontSize:'0.8rem', lineHeight:1.85, color:'#444' }}>{res.loveDesc}</div>
+              </div>
+            )}
+
+            <p style={{ fontSize:'0.65rem', color:'#bbb', textAlign:'center', marginBottom:20 }}>1920〜2300年 対応</p>
+
+            {/* フッターメッセージ */}
+            <div style={{ background:'rgba(74,63,107,0.05)', borderTop:'1px solid rgba(74,63,107,0.12)', borderRadius:2, padding:'18px 16px', fontSize:'0.76rem', lineHeight:1.9, color:'#555' }}>
+              恋愛強者論タイプとは、久遠怜が統計心理学の考え方をベースに、約10年間・延べ6万人へのカウンセリング経験から整理した、独自のタイプ理論です。
+              <br /><br />
+              このタイプ診断でお伝えしているのは、あくまでも、その人が持つ「先天的な傾向性」の一側面です。
+              <br /><br />
+              実際の恋愛観や行動は、育った環境やこれまでの経験、人間関係などによっても変化していきます。
+              <br /><br />
+              本来の分析では、「目的」「手段」「ワークスタイル」この3つを基本に、11OSの組み合わせも含めて、総合的に読み解いています。
+              <br /><br />
+              そのため、この簡易診断は、「自分には、こんな傾向もあるかもしれない」という6割程度の目安として、気軽に受け取っていただけたらと思います。
+              <br /><br />
+              自分を知ること。そして、相手を知ること。<br /><br />
+              この診断が、皆さんの恋愛や人間関係を理解するための、小さなヒントになれば嬉しいです🙌✨
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
